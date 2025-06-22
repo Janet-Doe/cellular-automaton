@@ -1,6 +1,6 @@
 package structure.conditions;
 
-import structure.State;
+import structure.states.State;
 
 public abstract class BilateralStateCondition extends StateCondition {
 

@@ -1,6 +1,7 @@
 package structure.conditions;
 
-import structure.State;
+import structure.states.State;
+import structure.states.UnspecifiedState;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -8,12 +9,23 @@ import java.util.Set;
 public abstract class StateCondition {
     public static final String ANONYMOUS = null;
     private String name = ANONYMOUS;
-    private State fromState = State.UNSPECIFIED;
+    private State fromState = UnspecifiedState.getInstance();
     private State toState;
     private Set<Condition> conditions = new HashSet<>();
 
     public StateCondition(String name, State toState) {
         this.name = name;
+        this.toState = toState;
+    }
+
+    public StateCondition(String name, State fromState, State toState) {
+        this.name = name;
+        this.fromState = fromState;
+        this.toState = toState;
+    }
+
+    public StateCondition(State fromState, State toState) {
+        this.fromState = fromState;
         this.toState = toState;
     }
 
@@ -56,9 +68,9 @@ public abstract class StateCondition {
         }
         sb.append("cell");
         State fromState = getFromState();
-        if (!fromState.equals(State.UNSPECIFIED)) sb.append(" of state ").append(fromState);
+        if (fromState instanceof UnspecifiedState) sb.append(" of state ").append(fromState);
         sb.append(" will turn to state ").append(this.getToState());
-        sb.append(" if the ratio between living neighbours and neighbours is :\n");
+        sb.append(" if the following conditions are met :\n");
         for (Condition condition : this.conditions) {
             sb.append("   - ").append(condition).append("\n");
         }

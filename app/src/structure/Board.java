@@ -8,18 +8,19 @@ public abstract class Board {
     private final int height;
     private final int width;
     private Set<StateCondition> conditions = new HashSet<>();
-    private Random seed = new Random();
+    private final Random seed = new Random();
+    private int age = 0;
 
-    public Board(int height, int width, double initializingRatio, Set<StateCondition> conditions) {
-        this.height = width;
-        this.width = height;
+    public Board(int width, int height, double initializingRatio, Set<StateCondition> conditions) {
+        this.width = width;
+        this.height = height;
         this.conditions.addAll(conditions);
         buildBoard(initializingRatio);
     }
 
-    public Board(int height, int width, double initializingRatio) {
-        this.height = width;
-        this.width = height;
+    public Board(int width, int height, double initializingRatio) {
+        this.height = height;
+        this.width = width;
         buildBoard(initializingRatio);
     }
 
@@ -27,7 +28,6 @@ public abstract class Board {
         this.cells = new ArrayList<>();
         for (int x = 0; x < height; x++) {
             ArrayList<Cell> line = new ArrayList<>();
-            this.cells.add(line);
             for (int y = 0; y < width; y++) {
                 line.add(new BasicCell(initializingRatio, this.seed));
             }
@@ -60,9 +60,12 @@ public abstract class Board {
     }
 
     public void clockTick(){
+        this.age++;
         for (int x = 0; x < height; x++) {
-            for (int y = 0; y < width; y++) {
-                this.getCell(x, y).tick(this.conditions);
+            int i = 0;
+            for (Cell cell : this.getCells().get(x)) {
+                //System.out.println("UPDATING CELL (" + x + " ; " + i++ + ")");
+                cell.tick(this.conditions);
             }
         }
         System.out.println(this);
@@ -71,9 +74,9 @@ public abstract class Board {
     public String toString(){
         StringBuilder sb = new StringBuilder();
         for (int x = 0; x < height; x++) {
-            for (int y = 0; y < width; y++) {
-                sb.append(getCell(x, y).toString());
-            }
+            int y = 0;
+            for (Cell cell : this.getCells().get(x))
+                sb.append(cell);
             sb.append("\n");
         }
         return sb.toString();

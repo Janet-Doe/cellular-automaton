@@ -1,6 +1,10 @@
 package structure;
 
 import structure.conditions.*;
+import structure.states.AliveState;
+import structure.states.DeadState;
+import structure.states.State;
+import structure.states.UnspecifiedState;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,7 +17,7 @@ public abstract class Cell {
     private Set<Cell> neighbours = new HashSet<>();
 
     public Cell(){
-        this.state.put(0, State.DEAD);
+        this.state.put(0, AliveState.getInstance());
     }
 
     public Cell(State state) {
@@ -21,8 +25,8 @@ public abstract class Cell {
     }
 
     public Cell(double ratio, Random seed){
-        if (seed.nextInt(100)+1 > ratio*100) this.state.put(0, State.DEAD);
-        else this.state.put(0, State.LIVING);
+        if (seed.nextInt(100)+1 > ratio*100) this.state.put(0, DeadState.getInstance());
+        else this.state.put(0, AliveState.getInstance());
     }
 
     public State getCurrentState() {
@@ -37,8 +41,8 @@ public abstract class Cell {
         return state;
     }
 
-    public State getStateAtTime(int time){
-        return state.get(time);
+    public State getStateAtTime(int tick){
+        return state.get(tick);
     }
 
     public int getAge() {
@@ -61,14 +65,13 @@ public abstract class Cell {
         this.neighbours.addAll(neighbours);
     }
 
-    public Set<Cell> getLivingNeighbours(){
-        return getLivingNeighbours(this.age);
-    }
-
-    public Set<Cell> getLivingNeighbours(int tick) {
+    public Set<Cell> getNeighboursOfState(State state, int tick){
         HashSet<Cell> livingNeighbours = new HashSet<>();
+        if (state == null) {
+
+        }
         for (Cell neighbour : this.neighbours) {
-            if (neighbour.getStateAtTime(tick) == State.LIVING) {
+            if (neighbour.getStateAtTime(tick).equals(state)) {
                 livingNeighbours.add(neighbour);
             }
         }
@@ -76,37 +79,62 @@ public abstract class Cell {
     }
 
     public void tick(Set<StateCondition> rules){
-        this.age++;
+        // System.out.println("Previous tick: " + this.getCurrentState());
+        age++;
         updateState(rules);
     }
 
-    public void updateState(Set<StateCondition> rules) {
+    private void updateState(Set<StateCondition> rules) {
         this.unchanged();
         for (StateCondition rule : rules) {
-            State relevantState = rule.getFromState();
-            if ((relevantState == this.getCurrentState()) || (relevantState == State.UNSPECIFIED)) {
-                boolean relevant = true;
+            boolean isRuleRelevantToThisCell = false;
+            State relevantStateForRule = rule.getFromState();
+            State stateOfCellAtPreviousTick = this.getStateAtTime(age-1);
+
+            //System.out.println("Checking if cell state can be changed by rule: " + rule);
+
+            if ( (relevantStateForRule == null)
+                    || ( relevantStateForRule.equals(stateOfCellAtPreviousTick) )
+                    || ( relevantStateForRule.equals(UnspecifiedState.getInstance()) )
+                    || ( stateOfCellAtPreviousTick.equals(UnspecifiedState.getInstance()) ) ) {
+                //System.out.println("The previous state of this cell meet the conditions of this rule. Checking neighbours.");
+                isRuleRelevantToThisCell = true;
                 for (Condition condition : rule.getConditions()) {
-                    if (!this.validStateChange(condition)) relevant = false;
-                }
-                if (relevant) {
-                    this.updateState(rule.getToState());
+                    if (! this.isValidStateChange(condition))
+                    {
+                        isRuleRelevantToThisCell = false;
+                        //System.out.println("The condition " + condition + " is not met.");
+                    }
                 }
             }
+            if (isRuleRelevantToThisCell) {
+                this.updateState(rule.getToState());
+                //System.out.println("State updated.");
+            }
         }
+        /*
+        System.out.println("Final state for this cell for tick " + this.age + ": " + this.getCurrentState());
+        System.out.println("\n\n");
+        */
     }
 
-    private boolean validStateChange(Condition condition) {
-        int livingNeighbours = getLivingNeighbours(this.age-1).size();
-        int neighbours = getNeighbours().size();
-        double ratio = (double)livingNeighbours / neighbours;
-        double conditionRatio = condition.getRatio();
+    private boolean isValidStateChange(Condition condition) {
+        State stateToCheckAmongNeighbours = condition.getStateOfNeighboursToCheckConditionOn();
+        int concernedNeighbours;
+        if (stateToCheckAmongNeighbours instanceof UnspecifiedState) {
+            concernedNeighbours = getNeighbours().size();
+        }
+        else {
+            concernedNeighbours = getNeighboursOfState(stateToCheckAmongNeighbours, this.age-1).size()
+                            + getNeighboursOfState(UnspecifiedState.getInstance(), this.age-1).size();
+        }
+        int conditionValue = condition.getValue();
         return switch (condition.getComparison()) {
-            case STRICTLY_LOWER -> ratio < conditionRatio;
-            case LOWER -> ratio <= conditionRatio;
-            case EQUALS -> ratio == conditionRatio;
-            case GREATER -> ratio >= conditionRatio;
-            case STRICTLY_GREATER -> ratio > conditionRatio;
+            case STRICTLY_LOWER -> concernedNeighbours < conditionValue;
+            case LOWER -> concernedNeighbours <= conditionValue;
+            case EQUALS -> concernedNeighbours == conditionValue;
+            case GREATER -> concernedNeighbours >= conditionValue;
+            case STRICTLY_GREATER -> concernedNeighbours > conditionValue;
         };
     }
 
@@ -115,11 +143,11 @@ public abstract class Cell {
     }
 
     public void birth() {
-        this.state.put(age, State.LIVING);
+        this.state.put(age, AliveState.getInstance());
     }
 
     public void death() {
-        this.state.put(age, State.DEAD);
+        this.state.put(age, DeadState.getInstance());
     }
 
     public void unchanged(){
@@ -127,10 +155,6 @@ public abstract class Cell {
     }
 
     public String toString(){
-        return switch (this.getCurrentState()) {
-            case LIVING -> " " + AnsiColor.color(AnsiColor.GREEN) + "X" + AnsiColor.color(AnsiColor.RESET) + " ";
-            case DEAD -> " " + AnsiColor.color(AnsiColor.RED) + "0" + AnsiColor.color(AnsiColor.RESET) + " " ;
-            default -> " 0 ";
-        };
+        return " " + this.getCurrentState().print() + " ";
     }
 }

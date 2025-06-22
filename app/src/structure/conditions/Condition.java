@@ -1,16 +1,30 @@
 package structure.conditions;
 
+import structure.states.State;
+import structure.states.UnspecifiedState;
+
 public class Condition {
-    private double ratio;
+    private State stateOfNeighboursToCheckConditionOn = UnspecifiedState.getInstance();
+    private int value;
     private Comparison comparison;
 
-    public Condition(double ratio, Comparison comparison) {
-        this.ratio = ratio;
+    public Condition(State stateOfNeighbours, int value, Comparison comparison) {
+        this.stateOfNeighboursToCheckConditionOn = stateOfNeighbours;
+        this.value = value;
         this.comparison = comparison;
     }
 
-    public double getRatio() {
-        return ratio;
+    public Condition(int value, Comparison comparison) {
+        this.value = value;
+        this.comparison = comparison;
+    }
+
+    public State getStateOfNeighboursToCheckConditionOn() {
+        return stateOfNeighboursToCheckConditionOn;
+    }
+
+    public int getValue() {
+        return value;
     }
 
     public Comparison getComparison() {
@@ -18,7 +32,7 @@ public class Condition {
     }
 
     public String toString() {
-        return comparison + " " + ratio;
+        return stateOfNeighboursToCheckConditionOn + " neighbours " + comparison + " " + value;
     }
 
 }
