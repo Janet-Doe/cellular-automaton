@@ -1,2 +1,4 @@
 # cellular-automaton
-Little projects to make a modulable cellular automaton
+Little project to make a modulable cellular automaton.
+
+> Currently in the work.
