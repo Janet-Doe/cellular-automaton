@@ -85,13 +85,16 @@ public abstract class Cell {
         else {
             Set<Cell> list = new HashSet<>();
             list.add(cell);
-            this.neighbours.put(neighbourhood,list);
+            this.neighbours.put(neighbourhood, list);
         }
         
     }
 
     public void addNeighbours(Set<Cell> neighbours, AbstractNeighbourhood neighbourhood) {
-        this.neighbours.get(neighbourhood).addAll(neighbours);
+        if (this.neighbours.containsKey(neighbourhood)){
+            this.neighbours.get(neighbourhood).addAll(neighbours);
+        }
+        this.neighbours.put(neighbourhood, neighbours);
     }
 
     public Set<Cell> getNeighboursOfState(State state, AbstractNeighbourhood neighbourhood, int tick){
